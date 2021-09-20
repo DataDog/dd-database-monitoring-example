@@ -1,0 +1,8 @@
+CREATE USER root WITH PASSWORD 'root';
+ALTER USER root WITH SUPERUSER;
+CREATE USER datadog WITH PASSWORD 'dog';
+GRANT SELECT ON pg_stat_database TO datadog;
+
+CREATE USER pgbench WITH PASSWORD 'pgbenchpw';
+CREATE DATABASE pgbench;
+GRANT ALL PRIVILEGES ON DATABASE pgbench to pgbench;

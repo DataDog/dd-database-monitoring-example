@@ -1,0 +1,65 @@
+version: '3'
+services:
+
+  agent:
+    links:
+     - postgres
+    image: datadog/agent:7.31.0-rc.7
+    environment:
+     - DD_API_KEY=${DD_API_KEY}
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /proc/:/host/proc/:ro
+     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+
+  pgbench:
+    build: docker/pgbench
+    links:
+      - postgres
+    # command: /bin/loop-forever.sh pgbench -iq -h postgres -p 5432 -U pgbench pgbench && pgbench -h postgres -p 5432 -U pgbench pgbench
+    command:
+      - /bin/loop-forever.sh
+      - pgbench 
+      - -iq
+      - -h postgres
+      - -p 5432
+      - -U pgbench
+      - pgbench
+      - '&&'
+      - pgbench
+      - --rate 10
+      - -T 45
+      - -P 20
+      - -h postgres
+      - -p 5432
+      - -U pgbench
+      - pgbench
+    environment:
+      PGPASSWORD: pgbenchpw
+      
+  postgres:
+    image: "postgres:13-alpine"
+    ports:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datadog -d sbtest && if [[ ! -e /tmp/container_ready.txt ]]; then exit 1; fi"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./postgres/initdb:/docker-entrypoint-initdb.d/
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_PASSWORD: datad0g
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    labels:
+      com.datadoghq.ad.check_names: '["postgres"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: |
+        [{
+          "dbm": true,
+          "host": "%%host%%",
+          "username": "datadog",
+          "password": "dog",
+          "port": "5432"
+        }]

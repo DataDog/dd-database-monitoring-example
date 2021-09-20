@@ -1,0 +1,76 @@
+version: '3'
+services:
+
+  agent:
+    links:
+     - mysql
+    image: datadog/agent:7.30.0
+    environment:
+     - DD_API_KEY=${DD_API_KEY}
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /proc/:/host/proc/:ro
+     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+
+  sysbench:
+    links:
+      - mysql
+    build: docker/sysbench
+    command:
+      - /bin/loop-forever.sh
+      - sleep 2
+      - '&&'
+      - /usr/local/bin/sysbench
+      - oltp_read_write
+      - prepare
+      - --db-ps-mode=disable
+      - --db-driver=mysql
+      - --table-size=100000
+      - --tables=10
+      - --create-secondary=1
+      - --threads=1
+      - --mysql-host=mysql
+      - --mysql-port=3306
+      - --mysql-user=sbtest
+      - --mysql-password=sbtestpw
+      - --mysql-db=sbtest
+      - '||'
+      - /usr/local/bin/sysbench
+      - oltp_read_write
+      - run
+      - --db-ps-mode=disable
+      - --db-driver=mysql
+      - --report-interval=10
+      - --table-size=100000
+      - --tables=10
+      - --create-secondary=1
+      - --threads=4
+      - --rate=50
+      - --time=360
+      - --mysql-host=mysql
+      - --mysql-port=3306
+      - --mysql-user=sbtest
+      - --mysql-password=sbtestpw
+      - --mysql-db=sbtest
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+    ports:
+      - "3306"
+    volumes:
+      - ./mysql/mysql.conf:/etc/mysql.conf
+      - ./mysql/initdb/1_mysql-5_x.sql:/docker-entrypoint-initdb.d/1_mysql-5_x.sql
+      - ./mysql/initdb/2_mysql-dbm-setup.sql:/docker-entrypoint-initdb.d/2_mysql-dbm-setup.sql
+    labels:
+      com.datadoghq.ad.check_names: '["mysql"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: |
+        [{
+          "dbm": true,
+          "server": "%%host%%",
+          "user": "datadog",
+          "pass": "dog",
+          "port": "3306"
+        }]
