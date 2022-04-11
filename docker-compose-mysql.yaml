@@ -4,7 +4,7 @@ services:
   agent:
     links:
      - mysql
-    image: datadog/agent:7.30.0
+    image: datadog/agent:7.35.0
     environment:
      - DD_API_KEY=${DD_API_KEY}
     volumes:

@@ -4,7 +4,7 @@ services:
   agent:
     links:
      - postgres
-    image: datadog/agent:7.31.0-rc.7
+    image: datadog/agent:7.35.0
     environment:
      - DD_API_KEY=${DD_API_KEY}
     volumes:
