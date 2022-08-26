@@ -15,10 +15,17 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" postgres <<-'EOSQL'
     GRANT USAGE ON SCHEMA datadog TO datadog;
     GRANT USAGE ON SCHEMA public TO datadog;
 
-    CREATE OR REPLACE FUNCTION datadog.explain_statement(l_query text, out explain JSON) RETURNS SETOF JSON AS
+    CREATE OR REPLACE FUNCTION datadog.explain_statement(l_query TEXT, OUT explain JSON) RETURNS SETOF JSON AS
     $$
+      DECLARE
+      curs REFCURSOR;
+      plan JSON;
+
       BEGIN
-          RETURN QUERY EXECUTE 'EXPLAIN (FORMAT JSON) ' || l_query;
+          OPEN curs FOR EXECUTE pg_catalog.concat('EXPLAIN (FORMAT JSON) ', l_query);
+          FETCH curs INTO plan;
+          CLOSE curs;
+          RETURN QUERY SELECT plan;
       END;
     $$
     LANGUAGE plpgsql
