@@ -1,0 +1,35 @@
+aws_region = "us-east-1"
+
+# Existing networking around your Postgres database.
+# For RDS:         fill in from `aws rds describe-db-instances`.
+# For Aurora:      fill in from `aws rds describe-db-clusters`.
+# For self-hosted: use the EC2 instance's VPC + subnet + SG.
+vpc_id               = "vpc-0123456789abcdef0"
+subnet_id            = "subnet-aaaaaaaaaaaaaaaaa"
+db_security_group_id = "sg-0123456789abcdef0"
+
+# Public-subnet demo posture. Set assign_public_ip = false (and provide a
+# private subnet above) to run the agent in a private subnet -- verify via SSM
+# Session Manager instead of SSH.
+assign_public_ip  = true
+key_pair_name     = "my-keypair"
+ssh_ingress_cidrs = ["203.0.113.42/32"]
+
+# Postgres connection details.
+# db_endpoint:
+#   - RDS:                the RDS endpoint
+#   - Aurora:             the cluster writer endpoint
+#   - self-hosted on EC2: the instance hostname or IP
+db_endpoint   = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+db_port       = 5432
+database_name = "postgres"
+
+# Datadog Postgres role -- already created on the DB (see README §Manual SQL).
+datadog_user          = "datadog"
+datadog_user_password = "REPLACE_ME"
+
+# Datadog destination.
+datadog_api_key = "REPLACE_ME"
+datadog_site    = "datadoghq.com"
+
+agent_host_tags = ["env:demo", "team:dbm", "service:postgres-ec2-demo"]

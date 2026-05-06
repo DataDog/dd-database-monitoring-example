@@ -14,7 +14,7 @@ The directory tree is organized by **cloud**, since one Terraform module typical
 |---|---|---|
 | `<database>` | `postgres` | `database` |
 | `<cloud>` | `aws` | `rds`, `aurora`, `self_hosted` (when self-hosted on EC2 in the same VPC) |
-| `<agent-runtime>` | `ecs-fargate`, `amazon-eks` | `agent_runtime` |
+| `<agent-runtime>` | `ecs-fargate`, `amazon-eks`, `ec2` | `agent_runtime` |
 
 ## Available today
 
@@ -22,6 +22,7 @@ The directory tree is organized by **cloud**, since one Terraform module typical
 |---|---|---|---|---|
 | Postgres | AWS | ECS Fargate | [`postgres/aws/ecs-fargate/`](./postgres/aws/ecs-fargate/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 | Postgres | AWS | Amazon EKS (EC2 nodes) | [`postgres/aws/amazon-eks/`](./postgres/aws/amazon-eks/) | `rds`, `aurora`, `self_hosted` (on EC2) |
+| Postgres | AWS | EC2 | [`postgres/aws/ec2/`](./postgres/aws/ec2/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 
 Combinations not in this table render a "Coming soon" stub on the docs page; in this repo they simply have no directory yet.
 

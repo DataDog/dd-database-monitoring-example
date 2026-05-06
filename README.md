@@ -41,5 +41,6 @@ Available today:
 |---|---|---|---|
 | Postgres | RDS | ECS Fargate | [`terraform/postgres/aws/ecs-fargate/`](./terraform/postgres/aws/ecs-fargate/) |
 | Postgres | RDS | Amazon EKS (EC2 nodes) | [`terraform/postgres/aws/amazon-eks/`](./terraform/postgres/aws/amazon-eks/) |
+| Postgres | RDS | EC2 | [`terraform/postgres/aws/ec2/`](./terraform/postgres/aws/ec2/) |
 
 See [`terraform/README.md`](./terraform/README.md) for the full list of filter values, conventions across examples, and what's coming.
