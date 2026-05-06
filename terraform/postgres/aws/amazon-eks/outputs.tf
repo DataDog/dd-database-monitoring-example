@@ -33,7 +33,7 @@ output "cluster_agent_deployment" {
   value       = "${helm_release.datadog.name}-datadog-cluster-agent"
 }
 
-output "rds_ingress_rule_id" {
-  description = "ID of the security-group ingress rule added to the RDS SG."
-  value       = aws_security_group_rule.rds_ingress_from_eks_nodes.id
+output "db_ingress_rule_id" {
+  description = "ID of the security-group ingress rule added to the Postgres database's SG."
+  value       = aws_security_group_rule.db_ingress_from_eks_nodes.id
 }

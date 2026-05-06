@@ -6,20 +6,20 @@ This example backs the **Postgres + Amazon EKS** combination on the [Set up Data
 
 ## Hosting coverage
 
-The module uses RDS-flavored variable names (`rds_endpoint`, `rds_security_group_id`, `rds_port`) but works for any Postgres database reachable inside an AWS VPC by security group:
+This module works for any Postgres database reachable inside an AWS VPC by security group. Point `db_endpoint` and `db_security_group_id` at:
 
-- **Amazon RDS Postgres** (the canonical case) — point `rds_endpoint` at the RDS endpoint and `rds_security_group_id` at the RDS security group.
-- **Amazon Aurora Postgres** — point `rds_endpoint` at the Aurora cluster writer endpoint and `rds_security_group_id` at the Aurora cluster's security group.
-- **Self-hosted Postgres on EC2 in the same VPC** — point `rds_endpoint` at the EC2 instance hostname/IP and `rds_security_group_id` at the security group attached to the Postgres EC2 instance.
+- **Amazon RDS Postgres** — the RDS endpoint and the RDS security group.
+- **Amazon Aurora Postgres** — the Aurora cluster writer endpoint and the Aurora cluster's security group.
+- **Self-hosted Postgres on EC2 in the same VPC** — the EC2 instance hostname/IP and the security group attached to the Postgres EC2 instance.
 
 For Postgres self-hosted **outside AWS** (on-premises, in another cloud), this AWS-side example does not apply.
 
 Supports two modes — pick one:
 
-- **Bring your own EKS cluster (default).** Set `eks_cluster_name` and `eks_node_security_group_id` in `terraform.tfvars`. The template installs the Datadog Helm chart into your cluster, opens 5432 ingress on the RDS SG from the node SG, and creates ~3 resources. Apply takes ~3 minutes.
+- **Bring your own EKS cluster (default).** Set `eks_cluster_name` and `eks_node_security_group_id` in `terraform.tfvars`. The template installs the Datadog Helm chart into your cluster, opens 5432 ingress on the database's SG from the node SG, and creates ~3 resources. Apply takes ~3 minutes.
 - **Provision a new EKS cluster (greenfield).** Leave `eks_cluster_name` empty and supply `private_subnet_ids` instead. The template provisions an EKS cluster + managed node group + IAM, then installs the agent. ~13 resources, ~15-20 minute apply, **adds ongoing AWS cost — see [Cost](#cost) below**.
 
-Either way, this template does **not** provision the RDS instance, the VPC, or the Postgres `datadog` user. The Postgres check runs on the Cluster Check Runner pods so DBM data is emitted once cluster-wide, not per node.
+Either way, this template does **not** provision the database, the VPC, or the Postgres `datadog` user. The Postgres check runs on the Cluster Check Runner pods so DBM data is emitted once cluster-wide, not per node.
 
 ## Cost
 
@@ -46,12 +46,12 @@ If you already operate EKS for other workloads, **always prefer BYO mode** — t
    ┌────────────────────────── existing VPC ──────────────────────────┐
    │                                                                  │
    │   EKS cluster (EC2 node groups)               ┌──────────────┐   │
-   │   ┌────────────────────────┐    5432          │     RDS      │   │
-   │   │  Cluster Check Runner  │ ───────────────▶ │   Postgres   │   │
-   │   │  datadog/agent:7       │                  └──────────────┘   │
-   │   │  postgres check        │                                     │
-   │   │  cluster_check: true   │                                     │
-   │   └─────────┬──────────────┘                                     │
+   │   ┌────────────────────────┐    5432          │   Postgres   │   │
+   │   │  Cluster Check Runner  │ ───────────────▶ │  (RDS, or    │   │
+   │   │  datadog/agent:7       │                  │   Aurora, or │   │
+   │   │  postgres check        │                  │   self-      │   │
+   │   │  cluster_check: true   │                  │   hosted EC2)│   │
+   │   └─────────┬──────────────┘                  └──────────────┘   │
    │             │                                                    │
    │   ┌─────────┴──────────────┐                                     │
    │   │  Cluster Agent         │                                     │
@@ -72,10 +72,10 @@ If you already operate EKS for other workloads, **always prefer BYO mode** — t
 ### For both modes
 
 - **Terraform >= 1.5** with the `aws`, `helm`, and `kubernetes` providers.
-- **An existing RDS Postgres** instance (Postgres 10+) in a VPC reachable from the EKS nodes.
-- **The Postgres `datadog` user** created on the RDS instance — see *Manual SQL* below.
+- **An existing Postgres database** (Postgres 10+) — RDS, Aurora, or self-hosted on EC2 — in a VPC reachable from the EKS nodes.
+- **The Postgres `datadog` user** created on the database — see *Manual SQL* below.
 - A **Datadog API key** for the destination org (and an app key if you want Cluster Agent features beyond DBM).
-- **RDS parameter group** with the following parameters set:
+- **A parameter group (RDS/Aurora) or `postgresql.conf` (self-hosted)** with the following parameters set:
 
   | Parameter | Value | Why |
   |---|---|---|
@@ -85,7 +85,7 @@ If you already operate EKS for other workloads, **always prefer BYO mode** — t
   | `pg_stat_statements.max` | `10000` | More normalized queries retained |
   | `pg_stat_statements.track_utility` | `off` | Skip PREPARE/EXPLAIN noise |
 
-  Changing `shared_preload_libraries` requires an RDS reboot.
+  Changing `shared_preload_libraries` requires a database restart (for RDS/Aurora, an instance reboot).
 
 ### Additionally for BYO mode
 
@@ -96,12 +96,12 @@ If you already operate EKS for other workloads, **always prefer BYO mode** — t
 ### Additionally for greenfield mode
 
 - **AWS credentials** with permission to create EKS clusters, IAM roles + policy attachments, EKS managed node groups, and security-group rules.
-- **At least 2 private subnets in different AZs** in the RDS's VPC, with NAT egress so the control plane and worker nodes can reach Datadog and ECR. Pass them via `private_subnet_ids`.
+- **At least 2 private subnets in different AZs** in the database's VPC, with NAT egress so the control plane and worker nodes can reach Datadog and ECR. Pass them via `private_subnet_ids`.
 - **Awareness of the ongoing cost** — see [Cost](#cost).
 
 ## Manual SQL
 
-Identical to the Fargate example — run this once against the RDS instance using a role with `rds_superuser` (the RDS master). Repeat the schema/grants block **in every database** you want monitored.
+Identical to the Fargate example — run this once against the Postgres database using a superuser role (`rds_superuser` on RDS/Aurora, or any role with `SUPERUSER` on self-hosted). Repeat the schema/grants block **in every database** you want monitored.
 
 ```sql
 -- Create the role
@@ -145,7 +145,7 @@ Reference: [Setup DBM for Postgres on RDS](https://docs.datadoghq.com/database_m
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars — pick BYO or greenfield (see the file header) and fill
-# in the rest (rds_security_group_id, rds_endpoint, database_name,
+# in the rest (db_security_group_id, db_endpoint, database_name,
 # datadog_user_password, datadog_api_key, …).
 
 terraform init
@@ -155,7 +155,7 @@ terraform apply
 
 What gets created depends on the mode:
 
-- **BYO mode** (`eks_cluster_name` set) — ~3 resources visible in Terraform: a `kubernetes_namespace`, a `helm_release` (which deploys the node Agent DaemonSet, Cluster Agent, and Cluster Check Runner inside your cluster), and a single `aws_security_group_rule` on the RDS SG. Apply takes ~3 minutes.
+- **BYO mode** (`eks_cluster_name` set) — ~3 resources visible in Terraform: a `kubernetes_namespace`, a `helm_release` (which deploys the node Agent DaemonSet, Cluster Agent, and Cluster Check Runner inside your cluster), and a single `aws_security_group_rule` on the database's SG. Apply takes ~3 minutes.
 - **Greenfield mode** (`eks_cluster_name = ""`) — ~13 resources: the BYO 3 plus an `aws_eks_cluster`, `aws_eks_node_group`, two `aws_iam_role`s for the cluster and node, and five `aws_iam_role_policy_attachment`s. Apply takes ~15-20 minutes (most of it waiting for the EKS control plane to come up).
 
 ## Verify
@@ -179,7 +179,7 @@ What gets created depends on the mode:
    You should see lines like `Running check postgres` and no `dbm` or `pg_stat_statements` errors.
 4. In the Datadog UI:
    - **Infrastructure → Kubernetes**: the EKS cluster appears with node and pod metrics.
-   - **Databases → List**: the RDS host appears with DBM enabled.
+   - **Databases → List**: the Postgres host appears with DBM enabled.
    - **Databases → Query Metrics**: rows render within ~2 minutes of database traffic.
 
 ## Teardown
@@ -190,8 +190,8 @@ terraform destroy
 
 What gets removed depends on the mode:
 
-- **BYO mode** — removes the helm release, the namespace, and the ingress rule we added to the RDS SG. **The EKS cluster, the worker nodes, the RDS instance, and the Postgres `datadog` user are untouched.** This is the BYO assertion: dropping our Terraform onto your existing cluster will not nuke it on destroy.
-- **Greenfield mode** — removes everything: helm release, namespace, RDS SG ingress rule, EKS node group, EKS cluster, and the IAM roles + policy attachments this template created. **The RDS instance and the Postgres `datadog` user are still untouched.** Stops the ~$0.10/hr control-plane charge once destroy completes (typically ~10 minutes).
+- **BYO mode** — removes the helm release, the namespace, and the ingress rule we added to the database's SG. **The EKS cluster, the worker nodes, the Postgres database, and the `datadog` user are untouched.** This is the BYO assertion: dropping our Terraform onto your existing cluster will not nuke it on destroy.
+- **Greenfield mode** — removes everything: helm release, namespace, the database's SG ingress rule, EKS node group, EKS cluster, and the IAM roles + policy attachments this template created. **The Postgres database and the `datadog` user are still untouched.** Stops the ~$0.10/hr control-plane charge once destroy completes (typically ~10 minutes).
 
 ## Security note
 
@@ -210,8 +210,8 @@ This is fine for a demo; for production:
 
 | Symptom | Likely cause |
 |---|---|
-| Cluster-check runner logs show `connection refused` to RDS | RDS SG ingress rule didn't apply, or runner pods are on nodes whose SG is not `eks_node_security_group_id` |
-| Runner logs show `pg_stat_statements is not loaded` | RDS parameter group missing `shared_preload_libraries=pg_stat_statements`, or RDS not rebooted |
+| Cluster-check runner logs show `connection refused` to the database | Database SG ingress rule didn't apply, or runner pods are on nodes whose SG is not `eks_node_security_group_id` |
+| Runner logs show `pg_stat_statements is not loaded` | Parameter group / `postgresql.conf` missing `shared_preload_libraries=pg_stat_statements`, or the database wasn't restarted |
 | Runner logs show `permission denied for relation pg_stat_activity` | `pg_monitor` role not granted to `datadog` user |
 | `agent clusterchecks` on the Cluster Agent shows the postgres check as unscheduled | `clusterChecksRunner.enabled` was disabled, or the runner deployment has zero ready pods |
 | No data in Datadog UI | API key wrong, `DD_SITE` mismatched, or pods can't reach `*.${DD_SITE}` (NAT egress / VPC endpoint missing) |
@@ -222,6 +222,6 @@ This is fine for a demo; for production:
 
 - `versions.tf` — Terraform + provider pins, EKS-backed `helm`/`kubernetes` provider config
 - `variables.tf` — inputs (secrets marked `sensitive`)
-- `main.tf` — namespace, helm release (Agent + Cluster Agent + CLC runners + Postgres cluster check), RDS-side ingress rule
+- `main.tf` — namespace, helm release (Agent + Cluster Agent + CLC runners + Postgres cluster check), database-side ingress rule
 - `outputs.tf` — useful identifiers for verification
 - `terraform.tfvars.example` — fill-in-the-blanks template

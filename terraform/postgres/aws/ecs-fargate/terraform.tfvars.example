@@ -1,17 +1,24 @@
 aws_region = "us-east-1"
 
-# Existing RDS networking — fill in from your AWS console or `aws rds describe-db-instances`.
+# Existing networking around your Postgres database.
+# For RDS:         fill in from `aws rds describe-db-instances`.
+# For Aurora:      fill in from `aws rds describe-db-clusters`.
+# For self-hosted: use the EC2 instance's VPC + subnets + SG.
 vpc_id                = "vpc-0123456789abcdef0"
 subnet_ids            = ["subnet-aaaaaaaaaaaaaaaaa", "subnet-bbbbbbbbbbbbbbbbb"]
-rds_security_group_id = "sg-0123456789abcdef0"
+db_security_group_id  = "sg-0123456789abcdef0"
 
 # Optional — set to attach the agent service to an existing ECS cluster.
 # Leave empty (or omit) to provision a new "${name_prefix}-cluster".
 # existing_ecs_cluster_name = "my-shared-fargate-cluster"
 
-# RDS Postgres connection details.
-rds_endpoint  = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
-rds_port      = 5432
+# Postgres connection details.
+# db_endpoint:
+#   - RDS:                the RDS endpoint
+#   - Aurora:             the cluster writer endpoint
+#   - self-hosted on EC2: the instance hostname or IP
+db_endpoint   = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+db_port       = 5432
 database_name = "postgres"
 
 # Datadog Postgres role — already created on the DB (see README §Manual SQL).

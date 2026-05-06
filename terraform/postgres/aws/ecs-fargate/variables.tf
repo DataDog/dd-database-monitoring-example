@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS region where the ECS cluster runs. Should match the RDS instance's region."
+  description = "AWS region where the ECS cluster runs. Should match the database's region."
   type        = string
 }
 
@@ -10,7 +10,7 @@ variable "name_prefix" {
 }
 
 variable "vpc_id" {
-  description = "VPC where the RDS instance lives. The Fargate task is launched in this same VPC."
+  description = "VPC where the Postgres database lives. The Fargate task is launched in this same VPC."
   type        = string
 }
 
@@ -19,8 +19,8 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "rds_security_group_id" {
-  description = "Security group attached to the RDS instance. An ingress rule on port 5432 from the Fargate task SG is added to it."
+variable "db_security_group_id" {
+  description = "Security group attached to your Postgres database (RDS instance SG, Aurora cluster SG, or EC2 instance SG for self-hosted). An ingress rule on port 5432 from the Fargate task SG is added to it."
   type        = string
 }
 
@@ -30,13 +30,13 @@ variable "existing_ecs_cluster_name" {
   default     = ""
 }
 
-variable "rds_endpoint" {
-  description = "RDS Postgres endpoint hostname (no port suffix)."
+variable "db_endpoint" {
+  description = "Postgres endpoint hostname (no port). For RDS, the RDS endpoint; for Aurora, the cluster writer endpoint; for self-hosted on EC2, the instance hostname or IP."
   type        = string
 }
 
-variable "rds_port" {
-  description = "RDS Postgres port."
+variable "db_port" {
+  description = "Postgres TCP port."
   type        = number
   default     = 5432
 }
@@ -113,7 +113,7 @@ variable "agent_host_tags" {
 }
 
 variable "ssl_mode" {
-  description = "Postgres SSL mode used by the agent connection. RDS defaults to require."
+  description = "Postgres SSL mode used by the agent connection. RDS and Aurora default to `require`; for self-hosted, set to whatever your `postgresql.conf` enforces."
   type        = string
   default     = "require"
 }

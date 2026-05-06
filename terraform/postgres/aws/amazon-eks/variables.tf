@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS region of the EKS cluster and the RDS instance."
+  description = "AWS region of the EKS cluster and the Postgres database."
   type        = string
 }
 
@@ -21,7 +21,7 @@ variable "eks_cluster_name" {
 }
 
 variable "eks_node_security_group_id" {
-  description = "Security group attached to the EKS worker nodes when bringing your own cluster (eks_cluster_name set). An ingress rule on the RDS SG is added from this SG so the cluster-check runner pods can reach Postgres. Ignored when provisioning a new cluster (the auto-created cluster security group is used instead)."
+  description = "Security group attached to the EKS worker nodes when bringing your own cluster (eks_cluster_name set). An ingress rule on the database SG is added from this SG so the cluster-check runner pods can reach Postgres. Ignored when provisioning a new cluster (the auto-created cluster security group is used instead)."
   type        = string
   default     = ""
 }
@@ -79,18 +79,18 @@ variable "namespace" {
   default     = "datadog"
 }
 
-variable "rds_security_group_id" {
-  description = "Security group attached to the RDS instance. An ingress rule on port 5432 from the EKS node SG is added to it."
+variable "db_security_group_id" {
+  description = "Security group attached to your Postgres database (RDS instance SG, Aurora cluster SG, or EC2 instance SG for self-hosted). An ingress rule on port 5432 from the EKS node SG is added to it."
   type        = string
 }
 
-variable "rds_endpoint" {
-  description = "RDS Postgres endpoint hostname (no port suffix)."
+variable "db_endpoint" {
+  description = "Postgres endpoint hostname (no port). For RDS, the RDS endpoint; for Aurora, the cluster writer endpoint; for self-hosted on EC2, the instance hostname or IP."
   type        = string
 }
 
-variable "rds_port" {
-  description = "RDS Postgres port."
+variable "db_port" {
+  description = "Postgres TCP port."
   type        = number
   default     = 5432
 }
@@ -168,7 +168,7 @@ variable "agent_host_tags" {
 }
 
 variable "ssl_mode" {
-  description = "Postgres SSL mode used by the agent connection. RDS defaults to require."
+  description = "Postgres SSL mode used by the agent connection. RDS and Aurora default to `require`; for self-hosted, set to whatever your `postgresql.conf` enforces."
   type        = string
   default     = "require"
 }

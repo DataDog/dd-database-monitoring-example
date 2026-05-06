@@ -1,8 +1,8 @@
 # Security group for the Fargate task. Egress all (NAT gateway in the chosen
-# private subnet is responsible for reaching Datadog and RDS over the VPC).
+# private subnet is responsible for reaching Datadog and the database over the VPC).
 resource "aws_security_group" "fargate_task" {
   name        = "${var.name_prefix}-task-sg"
-  description = "Datadog Agent Fargate task - egress to Datadog and RDS"
+  description = "Datadog Agent Fargate task - egress to Datadog and the Postgres database"
   vpc_id      = var.vpc_id
 
   egress {
@@ -16,16 +16,16 @@ resource "aws_security_group" "fargate_task" {
   tags = { Name = "${var.name_prefix}-task-sg" }
 }
 
-# Open Postgres ingress on the RDS security group from the Fargate task SG.
-# Managed as a standalone rule so the RDS SG itself stays untouched apart from
-# this single addition (and is cleanly removed on terraform destroy).
-resource "aws_security_group_rule" "rds_ingress_from_fargate" {
+# Open Postgres ingress on the database's security group from the Fargate task SG.
+# Managed as a standalone rule so the database's SG itself stays untouched apart
+# from this single addition (and is cleanly removed on terraform destroy).
+resource "aws_security_group_rule" "db_ingress_from_fargate" {
   type                     = "ingress"
-  description              = "Datadog Agent Fargate task to RDS Postgres"
-  from_port                = var.rds_port
-  to_port                  = var.rds_port
+  description              = "Datadog Agent Fargate task to Postgres"
+  from_port                = var.db_port
+  to_port                  = var.db_port
   protocol                 = "tcp"
-  security_group_id        = var.rds_security_group_id
+  security_group_id        = var.db_security_group_id
   source_security_group_id = aws_security_group.fargate_task.id
 }
 
@@ -95,8 +95,8 @@ resource "aws_ecs_task_definition" "datadog" {
         "com.datadoghq.ad.check_names"  = jsonencode(["postgres"])
         "com.datadoghq.ad.init_configs" = jsonencode([{}])
         "com.datadoghq.ad.instances" = jsonencode([{
-          host     = var.rds_endpoint
-          port     = var.rds_port
+          host     = var.db_endpoint
+          port     = var.db_port
           username = var.datadog_user
           password = var.datadog_user_password
           dbname   = var.database_name

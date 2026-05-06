@@ -15,7 +15,7 @@ eks_node_security_group_id = "sg-0eksnodes000000000"
 # template provisions an EKS cluster + managed node group, then installs
 # the agent. Adds ~$0.10/hr for the EKS control plane and ~15min to apply
 # time. The auto-created cluster security group is used as the source for
-# the RDS ingress rule.
+# the database's ingress rule.
 #
 # private_subnet_ids = [
 #   "subnet-aaaaaaaaaaaaaaaaa",   # AZ-a, must have NAT egress
@@ -32,12 +32,17 @@ eks_node_security_group_id = "sg-0eksnodes000000000"
 # Inputs that apply to both paths
 # ------------------------------------------------------------------
 
-# Existing RDS networking.
-rds_security_group_id = "sg-0rdsinst000000000"
+# Postgres database security group — RDS instance SG, Aurora cluster SG,
+# or the EC2 instance's SG for self-hosted Postgres.
+db_security_group_id = "sg-0postgresdb00000"
 
-# RDS Postgres connection details.
-rds_endpoint  = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
-rds_port      = 5432
+# Postgres connection details.
+# db_endpoint:
+#   - RDS:                the RDS endpoint
+#   - Aurora:             the cluster writer endpoint
+#   - self-hosted on EC2: the instance hostname or IP
+db_endpoint   = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+db_port       = 5432
 database_name = "postgres"
 
 # Datadog Postgres role -- already created on the DB (see README §Manual SQL).

@@ -5,9 +5,9 @@ locals {
   # Resolved cluster name — either the BYO name or the freshly-created one.
   cluster_name = local.manage_cluster ? aws_eks_cluster.main[0].name : var.eks_cluster_name
 
-  # Source SG for the RDS ingress rule. In greenfield mode we use the cluster's
-  # auto-created cluster security group, which the managed node group attaches
-  # to every node by default. In BYO mode the customer supplies it.
+  # Source SG for the database's ingress rule. In greenfield mode we use the
+  # cluster's auto-created cluster security group, which the managed node group
+  # attaches to every node by default. In BYO mode the customer supplies it.
   node_security_group_id = local.manage_cluster ? aws_eks_cluster.main[0].vpc_config[0].cluster_security_group_id : var.eks_node_security_group_id
 }
 
@@ -120,20 +120,20 @@ resource "aws_eks_node_group" "main" {
 }
 
 # ---------------------------------------------------------------------------
-# Always-on path: agent install + RDS SG ingress rule. Identical for both BYO
-# and greenfield modes; just sources its inputs from the locals above.
+# Always-on path: agent install + database SG ingress rule. Identical for both
+# BYO and greenfield modes; just sources its inputs from the locals above.
 # ---------------------------------------------------------------------------
 
-# Open Postgres ingress on the RDS security group from the EKS node SG.
-# Managed as a standalone rule so the RDS SG itself stays untouched apart from
-# this single addition (and is cleanly removed on terraform destroy).
-resource "aws_security_group_rule" "rds_ingress_from_eks_nodes" {
+# Open Postgres ingress on the database's security group from the EKS node SG.
+# Managed as a standalone rule so the database's SG itself stays untouched apart
+# from this single addition (and is cleanly removed on terraform destroy).
+resource "aws_security_group_rule" "db_ingress_from_eks_nodes" {
   type                     = "ingress"
-  description              = "Datadog Agent (EKS) cluster-check runners to RDS Postgres"
-  from_port                = var.rds_port
-  to_port                  = var.rds_port
+  description              = "Datadog Agent (EKS) cluster-check runners to Postgres"
+  from_port                = var.db_port
+  to_port                  = var.db_port
   protocol                 = "tcp"
-  security_group_id        = var.rds_security_group_id
+  security_group_id        = var.db_security_group_id
   source_security_group_id = local.node_security_group_id
 
   lifecycle {
@@ -157,8 +157,8 @@ resource "kubernetes_namespace" "datadog" {
 # Helm release: deploys the node Agent DaemonSet, the Cluster Agent, and the
 # Cluster Check Runner Deployment. The Postgres check runs as a cluster check
 # (single-instance, dispatched by the Cluster Agent to a CLC runner pod) -- the
-# right pattern for monitoring an external resource like RDS, so that DBM data
-# isn't duplicated by every node in the cluster.
+# right pattern for monitoring an external resource like a managed Postgres,
+# so that DBM data isn't duplicated by every node in the cluster.
 resource "helm_release" "datadog" {
   # Keep the release name short — the datadog/datadog chart appends suffixes
   # up to 43 chars (e.g. -datadog-cluster-agent-admission-controller) onto the
@@ -211,8 +211,8 @@ resource "helm_release" "datadog" {
             instances = [
               {
                 dbm      = true
-                host     = var.rds_endpoint
-                port     = var.rds_port
+                host     = var.db_endpoint
+                port     = var.db_port
                 username = var.datadog_user
                 password = var.datadog_user_password
                 dbname   = var.database_name
@@ -239,8 +239,8 @@ resource "helm_release" "datadog" {
       }
 
       # Dedicated Cluster Check Runner Deployment. The Postgres cluster check
-      # runs in these pods rather than on a node Agent, so RDS connectivity is
-      # only required from this set of pods.
+      # runs in these pods rather than on a node Agent, so database connectivity
+      # is only required from this set of pods.
       clusterChecksRunner = {
         enabled  = true
         replicas = var.cluster_check_runners_replicas
@@ -253,7 +253,7 @@ resource "helm_release" "datadog" {
   # exists; the [0] indexing into a length-0 list is fine because aws_eks_node_group
   # has count=0 and Terraform handles that gracefully.
   depends_on = [
-    aws_security_group_rule.rds_ingress_from_eks_nodes,
+    aws_security_group_rule.db_ingress_from_eks_nodes,
     aws_eks_node_group.main,
   ]
 }
