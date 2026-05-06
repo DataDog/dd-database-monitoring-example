@@ -39,7 +39,7 @@ Available today:
 
 | Database | Hosting | Agent runtime | Path |
 |---|---|---|---|
-| Postgres | RDS | ECS Fargate | [`terraform/postgres/rds/ecs-fargate/`](./terraform/postgres/rds/ecs-fargate/) |
-| Postgres | RDS | Amazon EKS (EC2 nodes) | [`terraform/postgres/rds/amazon-eks/`](./terraform/postgres/rds/amazon-eks/) |
+| Postgres | RDS | ECS Fargate | [`terraform/postgres/aws/ecs-fargate/`](./terraform/postgres/aws/ecs-fargate/) |
+| Postgres | RDS | Amazon EKS (EC2 nodes) | [`terraform/postgres/aws/amazon-eks/`](./terraform/postgres/aws/amazon-eks/) |
 
 See [`terraform/README.md`](./terraform/README.md) for the full list of filter values, conventions across examples, and what's coming.

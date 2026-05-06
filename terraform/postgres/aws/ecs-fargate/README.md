@@ -1,10 +1,20 @@
-# DBM on ECS Fargate — Postgres (RDS)
+# DBM on ECS Fargate — Postgres in AWS
 
-Stands up a single Datadog Agent on **AWS ECS Fargate** with **Database Monitoring** enabled, configured to monitor an **existing AWS RDS Postgres** instance via Autodiscovery.
+Stands up a single Datadog Agent on **AWS ECS Fargate** with **Database Monitoring** enabled, configured to monitor an **existing Postgres database in AWS** via Autodiscovery.
 
-This is a bring-your-own-DB setup: it does **not** provision an RDS instance, a VPC, or the Postgres `datadog` user. It only deploys the agent into the VPC where your RDS already lives, and opens the right ingress on the RDS security group.
+This is a bring-your-own-DB setup: it does **not** provision the database, a VPC, or the Postgres `datadog` user. It only deploys the agent into the VPC where your Postgres already lives, and opens the right ingress on the database's security group.
 
-This example backs the **Postgres + RDS + ECS Fargate** combination on the [Set up Database Monitoring with Terraform](https://docs.datadoghq.com/database_monitoring/setup_agent_terraform/) docs page.
+This example backs the **Postgres + ECS Fargate** combination on the [Set up Database Monitoring with Terraform](https://docs.datadoghq.com/database_monitoring/setup_agent_terraform/) docs page, for `db_hosting` ∈ {`rds`, `aurora`, `self_hosted`}.
+
+## Hosting coverage
+
+The module uses RDS-flavored variable names (`rds_endpoint`, `rds_security_group_id`, `rds_port`) but works for any Postgres database reachable inside an AWS VPC by security group:
+
+- **Amazon RDS Postgres** (the canonical case) — point `rds_endpoint` at the RDS endpoint and `rds_security_group_id` at the RDS security group.
+- **Amazon Aurora Postgres** — point `rds_endpoint` at the Aurora cluster writer endpoint and `rds_security_group_id` at the Aurora cluster's security group.
+- **Self-hosted Postgres on EC2 in the same VPC** — point `rds_endpoint` at the EC2 instance hostname/IP and `rds_security_group_id` at the security group attached to the Postgres EC2 instance.
+
+For Postgres self-hosted **outside AWS** (on-premises, in another cloud), this AWS-side example does not apply.
 
 ## Architecture
 

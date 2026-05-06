@@ -4,24 +4,24 @@ These examples back the [**Set up Database Monitoring with Terraform**](https://
 
 ## Layout
 
-Examples are organized by the same three filters as the docs page:
-
 ```
-terraform/<database>/<hosting>/<agent-runtime>/
+terraform/<database>/<cloud>/<agent-runtime>/
 ```
 
-| Filter | Values used today |
-|---|---|
-| `<database>` | `postgres`, `mysql` *(coming soon)*, `sql_server` *(coming soon)* |
-| `<hosting>` | `rds`, `aurora` *(coming soon)*, `cloud_sql` *(coming soon)*, `alloydb` *(coming soon)*, `azure` *(coming soon)*, `self-hosted` *(coming soon)* |
-| `<agent-runtime>` | `ecs-fargate`, `amazon-eks`, `ecs-ec2` *(coming soon)*, `amazon-ec2` *(coming soon)* |
+The directory tree is organized by **cloud**, since one Terraform module typically covers all of a cloud's database hosting flavors that share the same VPC + security-group semantics. The docs page filters customers by hosting (`rds`, `aurora`, `cloud_sql`, `alloydb`, `azure`, `self_hosted`) and points multiple filter values at the same directory when one module covers them.
+
+| Slot | Values used today | Maps to docs `db_hosting` filter |
+|---|---|---|
+| `<database>` | `postgres` | `database` |
+| `<cloud>` | `aws` | `rds`, `aurora`, `self_hosted` (when self-hosted on EC2 in the same VPC) |
+| `<agent-runtime>` | `ecs-fargate`, `amazon-eks` | `agent_runtime` |
 
 ## Available today
 
-| Database | Hosting | Agent runtime | Path |
-|---|---|---|---|
-| Postgres | RDS | ECS Fargate | [`postgres/rds/ecs-fargate/`](./postgres/rds/ecs-fargate/) |
-| Postgres | RDS | Amazon EKS (EC2 nodes) | [`postgres/rds/amazon-eks/`](./postgres/rds/amazon-eks/) |
+| Database | Cloud | Agent runtime | Path | Covers `db_hosting` |
+|---|---|---|---|---|
+| Postgres | AWS | ECS Fargate | [`postgres/aws/ecs-fargate/`](./postgres/aws/ecs-fargate/) | `rds`, `aurora`, `self_hosted` (on EC2) |
+| Postgres | AWS | Amazon EKS (EC2 nodes) | [`postgres/aws/amazon-eks/`](./postgres/aws/amazon-eks/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 
 Combinations not in this table render a "Coming soon" stub on the docs page; in this repo they simply have no directory yet.
 
@@ -30,7 +30,7 @@ Combinations not in this table render a "Coming soon" stub on the docs page; in 
 Each example directory is a self-contained Terraform module:
 
 ```bash
-cd terraform/postgres/rds/ecs-fargate
+cd terraform/postgres/aws/ecs-fargate
 
 cp terraform.tfvars.example terraform.tfvars
 # fill in the variables — see the README in that directory for the full list
