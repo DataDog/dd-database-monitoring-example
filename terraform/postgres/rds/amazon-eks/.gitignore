@@ -1,0 +1,22 @@
+# Sensitive credentials -- never commit these
+*.tfvars
+!*.tfvars.example
+
+# Terraform state (contains sensitive data)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Terraform plan files -- binary, contain rendered variable values
+# including secrets. Use `terraform plan -out=NAME` locally; never commit.
+*.tfplan
+*.plan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc

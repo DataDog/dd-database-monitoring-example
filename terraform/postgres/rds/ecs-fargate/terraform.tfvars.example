@@ -1,0 +1,25 @@
+aws_region = "us-east-1"
+
+# Existing RDS networking — fill in from your AWS console or `aws rds describe-db-instances`.
+vpc_id                = "vpc-0123456789abcdef0"
+subnet_ids            = ["subnet-aaaaaaaaaaaaaaaaa", "subnet-bbbbbbbbbbbbbbbbb"]
+rds_security_group_id = "sg-0123456789abcdef0"
+
+# Optional — set to attach the agent service to an existing ECS cluster.
+# Leave empty (or omit) to provision a new "${name_prefix}-cluster".
+# existing_ecs_cluster_name = "my-shared-fargate-cluster"
+
+# RDS Postgres connection details.
+rds_endpoint  = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+rds_port      = 5432
+database_name = "postgres"
+
+# Datadog Postgres role — already created on the DB (see README §Manual SQL).
+datadog_user          = "datadog"
+datadog_user_password = "REPLACE_ME"
+
+# Datadog destination.
+datadog_api_key = "REPLACE_ME"
+datadog_site    = "datadoghq.com"
+
+agent_host_tags = ["env:demo", "team:dbm", "service:postgres-fargate-demo"]
