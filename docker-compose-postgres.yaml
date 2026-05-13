@@ -1,51 +1,50 @@
-version: '3'
+version: '3.8'
 services:
 
   agent:
-    links:
-     - postgres
-    image: datadog/agent:7.35.0
-    environment:
-     - DD_API_KEY=${DD_API_KEY}
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-     - /proc/:/host/proc/:ro
-     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
-
-  pgbench:
-    build: docker/pgbench
+    image: datadog/agent:latest
     links:
       - postgres
-    # command: /bin/loop-forever.sh pgbench -iq -h postgres -p 5432 -U pgbench pgbench && pgbench -h postgres -p 5432 -U pgbench pgbench
-    command:
-      - /bin/loop-forever.sh
-      - pgbench 
-      - -iq
-      - -h postgres
-      - -p 5432
-      - -U pgbench
-      - pgbench
-      - '&&'
-      - pgbench
-      - --rate 10
-      - -T 45
-      - -P 20
-      - -h postgres
-      - -p 5432
-      - -U pgbench
-      - pgbench
     environment:
-      PGPASSWORD: pgbenchpw
-      
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+
+  app:
+    build: app/
+    links:
+      - agent
+      - postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      agent:
+        condition: service_healthy
+    environment:
+      - DB_DRIVER=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=orders
+      - APP_USER=orders
+      - APP_PASSWORD=ordersPw
+      - DD_SERVICE=orders-app
+      - DD_ENV=development
+      - DD_AGENT_HOST=agent
+
   postgres:
-    image: "postgres:13-alpine"
+    image: postgres:14-alpine
     ports:
       - "5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U datadog -d sbtest && if [[ ! -e /tmp/container_ready.txt ]]; then exit 1; fi"]
-      interval: 1s
+      test: ["CMD-SHELL", "pg_isready -U datadog -d orders"]
+      interval: 2s
       timeout: 5s
-      retries: 5
+      retries: 30
     volumes:
       - ./postgres/initdb:/docker-entrypoint-initdb.d/
       - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
@@ -59,7 +58,15 @@ services:
         [{
           "dbm": true,
           "host": "%%host%%",
+          "port": "5432",
           "username": "datadog",
           "password": "dog",
-          "port": "5432"
+          "query_samples": {
+            "enabled": true,
+            "explain_parameterized_queries": true
+          },
+          "query_metrics": {"enabled": true},
+          "query_activity": {"enabled": true},
+          "collect_schemas": {"enabled": true},
+          "tags": ["env:development", "service:orders-app"]
         }]

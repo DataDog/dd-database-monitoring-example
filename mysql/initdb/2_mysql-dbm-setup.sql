@@ -1,6 +1,7 @@
 GRANT SELECT ON performance_schema.* TO 'datadog'@'%';
 GRANT CREATE TEMPORARY TABLES ON `datadog`.* TO 'datadog'@'%';
 
+
 CREATE SCHEMA datadog;
 
 DELIMITER $$
@@ -14,7 +15,8 @@ BEGIN
     DEALLOCATE PREPARE stmt;
 END $$
 
--- (Optional) Gives the agent the ability to enable performance schema events_statements consumers on databases where they can't be enabled permanently in the configuration (like RDS Aurora)
+-- Gives the agent the ability to enable performance schema events_statements consumers
+-- on databases where they can't be enabled permanently (e.g. RDS Aurora)
 CREATE PROCEDURE datadog.enable_events_statements_consumers()
     SQL SECURITY DEFINER
 BEGIN
@@ -26,12 +28,10 @@ DELIMITER ;
 GRANT EXECUTE ON PROCEDURE datadog.explain_statement TO 'datadog'@'%';
 GRANT EXECUTE ON PROCEDURE datadog.enable_events_statements_consumers TO 'datadog'@'%';
 
--- DBM additional setup
-CREATE SCHEMA sbtest;
-
+-- explain_statement in the orders schema so the agent can collect plans for app queries
 DELIMITER $$
 
-CREATE PROCEDURE sbtest.explain_statement(IN query TEXT)
+CREATE PROCEDURE orders.explain_statement(IN query TEXT)
     SQL SECURITY DEFINER
 BEGIN
     SET @explain := CONCAT('EXPLAIN FORMAT=json ', query);
@@ -42,4 +42,4 @@ END $$
 
 DELIMITER ;
 
-GRANT EXECUTE ON PROCEDURE sbtest.explain_statement to 'datadog'@'%';
+GRANT EXECUTE ON PROCEDURE orders.explain_statement TO 'datadog'@'%';
