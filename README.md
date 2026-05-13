@@ -11,19 +11,56 @@ Worked examples for [Datadog Database Monitoring](https://docs.datadoghq.com/dat
 
 Backs the [Getting Started with Database Monitoring](https://docs.datadoghq.com/getting_started/database_monitoring/) docs.
 
-```bash
-export DD_API_KEY=...
+Each stack starts three containers:
 
-# Postgres + Datadog Agent + pgbench load
+| Container | What it does |
+|---|---|
+| `postgres` / `mysql` | Database pre-configured for DBM (extensions, users, explain functions) |
+| `agent` | Datadog Agent with DBM + APM enabled, auto-discovers the database via Docker labels |
+| `app` | Go orders app — seeds an e-commerce schema and runs continuous queries to generate realistic DBM signals |
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker + Docker Compose v2)
+- A Datadog API key
+
+### Quick start
+
+```bash
+export DD_API_KEY=<your-api-key>
+
+# Postgres 14 + Datadog Agent + orders app
 make postgres
 
-# MySQL + Datadog Agent + sysbench load
+# MySQL 8.0 + Datadog Agent + orders app
 make mysql
 
+# Tear down
 make clean
 ```
 
-Files: `docker-compose-postgres.yaml`, `docker-compose-mysql.yaml`, `postgres/`, `mysql/`, `Makefile`.
+For non-US Datadog sites set `DD_SITE` before running:
+
+```bash
+export DD_SITE=datadoghq.eu   # EU
+export DD_SITE=datad0g.com    # staging
+```
+
+### What you'll see in Datadog
+
+Navigate to **[Database Monitoring](https://app.datadoghq.com/databases)** → **Queries**. The database instance appears within ~2 minutes of startup.
+
+The orders app generates these DBM signals continuously:
+
+| Signal | How it's produced |
+|---|---|
+| Query metrics | SELECT / INSERT / UPDATE across `users`, `orders`, `order_items` |
+| Execution plans | `explain_statement` function called automatically by the agent |
+| Full table scans | Queries on `orders.status` (intentionally un-indexed) |
+| Lock contention | Two goroutines compete for the same rows via `SELECT FOR UPDATE` |
+| APM ↔ DBM correlation | Trace context injected into every SQL query — click a span in APM to jump to the matching query in DBM |
+
+Files: `docker-compose-postgres.yaml`, `docker-compose-mysql.yaml`, `postgres/`, `mysql/`, `app/`, `Makefile`.
 
 ## Terraform examples (production-style deploy)
 

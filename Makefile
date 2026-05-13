@@ -1,15 +1,17 @@
 .PHONY: mysql
 mysql: check-apikey
-	docker-compose -f docker-compose-mysql.yaml up agent sysbench
+	docker-compose -f docker-compose-mysql.yaml up --build agent app
 
 .PHONY: postgres
 postgres: check-apikey
-	docker-compose -f docker-compose-postgres.yaml up agent pgbench
+	docker-compose -f docker-compose-postgres.yaml up --build agent app
 
 .PHONY: clean
 clean:
-	docker-compose down
-	docker-compose rm -f
+	docker-compose -f docker-compose-postgres.yaml down --rmi local
+	docker-compose -f docker-compose-mysql.yaml down --rmi local
+	docker-compose -f docker-compose-postgres.yaml rm -f
+	docker-compose -f docker-compose-mysql.yaml rm -f
 
 .PHONY: check-apikey
 check-apikey:

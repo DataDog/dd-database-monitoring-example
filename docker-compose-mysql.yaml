@@ -1,67 +1,55 @@
-version: '3'
+version: '3.8'
 services:
 
   agent:
-    links:
-     - mysql
-    image: datadog/agent:7.35.0
-    environment:
-     - DD_API_KEY=${DD_API_KEY}
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-     - /proc/:/host/proc/:ro
-     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
-
-  sysbench:
+    image: datadog/agent:latest
     links:
       - mysql
-    build: docker/sysbench
-    command:
-      - /bin/loop-forever.sh
-      - sleep 2
-      - '&&'
-      - /usr/local/bin/sysbench
-      - oltp_read_write
-      - prepare
-      - --db-ps-mode=disable
-      - --db-driver=mysql
-      - --table-size=100000
-      - --tables=10
-      - --create-secondary=1
-      - --threads=1
-      - --mysql-host=mysql
-      - --mysql-port=3306
-      - --mysql-user=sbtest
-      - --mysql-password=sbtestpw
-      - --mysql-db=sbtest
-      - '||'
-      - /usr/local/bin/sysbench
-      - oltp_read_write
-      - run
-      - --db-ps-mode=disable
-      - --db-driver=mysql
-      - --report-interval=10
-      - --table-size=100000
-      - --tables=10
-      - --create-secondary=1
-      - --threads=4
-      - --rate=50
-      - --time=360
-      - --mysql-host=mysql
-      - --mysql-port=3306
-      - --mysql-user=sbtest
-      - --mysql-password=sbtestpw
-      - --mysql-db=sbtest
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+
+  app:
+    build: app/
+    links:
+      - agent
+      - mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+      agent:
+        condition: service_healthy
+    environment:
+      - DB_DRIVER=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=orders
+      - APP_USER=orders
+      - APP_PASSWORD=ordersPw
+      - DD_SERVICE=orders-app
+      - DD_ENV=development
+      - DD_AGENT_HOST=agent
 
   mysql:
-    image: mysql:5.7
+    image: mysql:8.0
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
     ports:
       - "3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
     volumes:
-      - ./mysql/mysql.conf:/etc/mysql.conf
-      - ./mysql/initdb/1_mysql-5_x.sql:/docker-entrypoint-initdb.d/1_mysql-5_x.sql
+      - ./mysql/mysql.conf:/etc/mysql/conf.d/datadog.cnf
+      - ./mysql/initdb/1_mysql-8_0.sql:/docker-entrypoint-initdb.d/1_mysql-8_0.sql
       - ./mysql/initdb/2_mysql-dbm-setup.sql:/docker-entrypoint-initdb.d/2_mysql-dbm-setup.sql
     labels:
       com.datadoghq.ad.check_names: '["mysql"]'
@@ -70,7 +58,12 @@ services:
         [{
           "dbm": true,
           "server": "%%host%%",
+          "port": "3306",
           "user": "datadog",
           "pass": "dog",
-          "port": "3306"
+          "query_samples": {"enabled": true},
+          "query_metrics": {"enabled": true},
+          "query_activity": {"enabled": true},
+          "collect_schemas": {"enabled": true},
+          "tags": ["env:development", "service:orders-app"]
         }]
