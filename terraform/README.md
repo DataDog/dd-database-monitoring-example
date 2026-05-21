@@ -23,6 +23,8 @@ The directory tree is organized by **cloud**, since one Terraform module typical
 | Postgres | AWS | ECS Fargate | [`postgres/aws/ecs-fargate/`](./postgres/aws/ecs-fargate/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 | Postgres | AWS | Amazon EKS (EC2 nodes) | [`postgres/aws/amazon-eks/`](./postgres/aws/amazon-eks/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 | Postgres | AWS | EC2 | [`postgres/aws/ec2/`](./postgres/aws/ec2/) | `rds`, `aurora`, `self_hosted` (on EC2) |
+| MySQL | AWS | ECS Fargate | [`mysql/aws/ecs-fargate/`](./mysql/aws/ecs-fargate/) | `rds`, `aurora`, `self_hosted` (on EC2) |
+| MySQL | AWS | Amazon EKS (EC2 nodes) | [`mysql/aws/amazon-eks/`](./mysql/aws/amazon-eks/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 | MySQL | AWS | EC2 | [`mysql/aws/ec2/`](./mysql/aws/ec2/) | `rds`, `aurora`, `self_hosted` (on EC2) |
 
 Combinations not in this table render a "Coming soon" stub on the docs page; in this repo they simply have no directory yet.
@@ -66,4 +68,4 @@ Every example follows the same file convention:
 
 - [Set up Database Monitoring with Terraform](https://docs.datadoghq.com/database_monitoring/setup_agent_terraform/) — the docs page these examples back
 - [Database Monitoring](https://docs.datadoghq.com/database_monitoring/) — DBM product overview
-- [`_bootstrap/`](./_bootstrap/) — Terraform for the prerequisites these examples assume (RDS instance with DBM-ready parameter group, the `datadog` Postgres user, etc.)
+- [`_bootstrap/`](./_bootstrap/) — Terraform for the prerequisites these examples assume (RDS instance with DBM-ready parameter group, the `datadog` database user, etc.)

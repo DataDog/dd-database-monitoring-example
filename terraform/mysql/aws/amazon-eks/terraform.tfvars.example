@@ -1,0 +1,56 @@
+aws_region = "us-east-1"
+
+# ------------------------------------------------------------------
+# Pick ONE of the two paths below.
+# ------------------------------------------------------------------
+
+# === Path A: bring your own EKS cluster ===
+# Set both. The template skips cluster + node group creation and only
+# installs the Datadog Agent helm release into the supplied cluster.
+eks_cluster_name           = "my-eks-cluster"
+eks_node_security_group_id = "sg-0eksnodes000000000"
+
+# === Path B: provision a new EKS cluster ===
+# Comment out the two lines above and uncomment the block below. The
+# template provisions an EKS cluster + managed node group, then installs
+# the agent. Adds ~$0.10/hr for the EKS control plane and ~15min to apply
+# time. The auto-created cluster security group is used as the source for
+# the database's ingress rule.
+#
+# private_subnet_ids = [
+#   "subnet-aaaaaaaaaaaaaaaaa",   # AZ-a, must have NAT egress
+#   "subnet-bbbbbbbbbbbbbbbbb",   # AZ-b, must have NAT egress
+# ]
+# kubernetes_version = "1.30"
+# node_instance_type = "t3.small"
+# node_desired_count = 2
+# node_min_count     = 2
+# node_max_count     = 4
+# node_disk_size_gb  = 20
+
+# ------------------------------------------------------------------
+# Inputs that apply to both paths
+# ------------------------------------------------------------------
+
+# MySQL database security group — RDS instance SG, Aurora cluster SG,
+# or the EC2 instance's SG for self-hosted MySQL.
+db_security_group_id = "sg-0mysqldb000000000"
+
+# MySQL connection details.
+# db_endpoint:
+#   - RDS:                the RDS endpoint
+#   - Aurora:             the cluster writer endpoint
+#   - self-hosted on EC2: the instance hostname or IP
+db_endpoint = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+db_port     = 3306
+
+# Datadog MySQL user -- already created on the DB (see README §Manual SQL).
+datadog_user          = "datadog"
+datadog_user_password = "REPLACE_ME"
+
+# Datadog destination.
+datadog_api_key = "REPLACE_ME"
+datadog_app_key = ""
+datadog_site    = "datadoghq.com"
+
+agent_host_tags = ["env:demo", "team:dbm", "service:mysql-eks-demo"]

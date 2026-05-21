@@ -1,0 +1,31 @@
+aws_region = "us-east-1"
+
+# Existing networking around your MySQL database.
+# For RDS:         fill in from `aws rds describe-db-instances`.
+# For Aurora:      fill in from `aws rds describe-db-clusters`.
+# For self-hosted: use the EC2 instance's VPC + subnets + SG.
+vpc_id               = "vpc-0123456789abcdef0"
+subnet_ids           = ["subnet-aaaaaaaaaaaaaaaaa", "subnet-bbbbbbbbbbbbbbbbb"]
+db_security_group_id = "sg-0123456789abcdef0"
+
+# Optional — set to attach the agent service to an existing ECS cluster.
+# Leave empty (or omit) to provision a new "${name_prefix}-cluster".
+# existing_ecs_cluster_name = "my-shared-fargate-cluster"
+
+# MySQL connection details.
+# db_endpoint:
+#   - RDS:                the RDS endpoint
+#   - Aurora:             the cluster writer endpoint
+#   - self-hosted on EC2: the instance hostname or IP
+db_endpoint = "my-db.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com"
+db_port     = 3306
+
+# Datadog MySQL user — already created on the DB (see README §Manual SQL).
+datadog_user          = "datadog"
+datadog_user_password = "REPLACE_ME"
+
+# Datadog destination.
+datadog_api_key = "REPLACE_ME"
+datadog_site    = "datadoghq.com"
+
+agent_host_tags = ["env:demo", "team:dbm", "service:mysql-fargate-demo"]

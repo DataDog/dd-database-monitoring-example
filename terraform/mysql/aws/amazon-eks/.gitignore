@@ -1,0 +1,16 @@
+# Sensitive credentials -- never commit these
+*.tfvars
+!*.tfvars.example
+
+# Terraform state (contains sensitive data)
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
