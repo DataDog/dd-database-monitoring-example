@@ -39,7 +39,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" orders <<-'EOSQL'
     CREATE SCHEMA datadog;
     GRANT USAGE ON SCHEMA datadog TO datadog;
     GRANT USAGE ON SCHEMA public TO datadog;
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO datadog;
     ALTER DEFAULT PRIVILEGES FOR ROLE orders IN SCHEMA public GRANT SELECT ON TABLES TO datadog;
 
     CREATE OR REPLACE FUNCTION datadog.explain_statement(l_query text, out explain JSON) RETURNS SETOF JSON AS
