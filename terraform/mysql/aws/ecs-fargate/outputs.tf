@@ -22,3 +22,8 @@ output "fargate_security_group_id" {
   description = "Security group attached to the Fargate task."
   value       = aws_security_group.fargate_task.id
 }
+
+output "db_ingress_rule_id" {
+  description = "ID of the security-group ingress rule added to the MySQL database's SG."
+  value       = aws_security_group_rule.db_ingress_from_fargate.id
+}
