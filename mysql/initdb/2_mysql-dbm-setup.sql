@@ -1,4 +1,7 @@
 GRANT SELECT ON performance_schema.* TO 'datadog'@'%';
+GRANT SELECT ON mysql.innodb_index_stats TO 'datadog'@'%';
+GRANT SELECT ON mysql.innodb_table_stats TO 'datadog'@'%';
+GRANT SELECT ON orders.* TO 'datadog'@'%';
 GRANT CREATE TEMPORARY TABLES ON `datadog`.* TO 'datadog'@'%';
 
 

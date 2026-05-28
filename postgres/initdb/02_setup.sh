@@ -34,11 +34,11 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" postgres <<-'EOSQL'
 EOSQL
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" orders <<-'EOSQL'
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
     GRANT pg_monitor TO datadog;
     CREATE SCHEMA datadog;
     GRANT USAGE ON SCHEMA datadog TO datadog;
     GRANT USAGE ON SCHEMA public TO datadog;
-    -- Allow datadog to see tables created by the orders user after startup
     ALTER DEFAULT PRIVILEGES FOR ROLE orders IN SCHEMA public GRANT SELECT ON TABLES TO datadog;
 
     CREATE OR REPLACE FUNCTION datadog.explain_statement(l_query text, out explain JSON) RETURNS SETOF JSON AS

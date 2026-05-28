@@ -68,5 +68,6 @@ services:
           "query_metrics": {"enabled": true},
           "query_activity": {"enabled": true},
           "collect_schemas": {"enabled": true},
+          "database_autodiscovery": {"enabled": true},
           "tags": ["env:development", "service:orders-app"]
         }]
